@@ -1,0 +1,22 @@
+The Product Owner delivered the following story:
+As a user, I can see an overview of services in my organization. Acceptance criteria include:
+1. User can see the name, a brief description, and versions available for a given service
+2. User can navigate to a given service from its card
+3. User can search for a specific service
+
+The Assignment
+You're responsible for the data model and API portions of this story. Implement a Services API that can be used to implement this dashboard widget. It should support
+● Returning a list of services
+○ support filtering, sorting, pagination
+● Fetching a particular service
+○ including a method for retrieving its versions
+The API can be read-only. Choose a persistence mechanism that is appropriate for this feature.
+We'll evaluate the design, implementation choices, and functionality of your project. The code should be as production ready as you can make it, even if that means reducing the total features you are able to add].
+Additional considerations
+If you have the time and inclination, consider the following:
+● Include tests (unit, integration) or a test plan
+● Provide authentication/authorization on the API
+● Add CRUD operations to the API
+How to submit the project
+Include a README with your project that describes your design considerations, assumptions and trade-offs made during this exercise.
+You have a week to complete this, but we don't expect you to spend more than a few hours on it. When it's ready, please send your recruiter a link to the source code, preferably in a github repo.
