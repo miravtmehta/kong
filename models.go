@@ -7,17 +7,10 @@ import (
 
 func (s *serviceClient) GetAllService(opts *QueryOptions) (*ServiceList, error) {
 	var dbModel []Service
-	var order string
-
-	if opts.Sort[0] == '+' {
-		order = "ASC"
-	} else if opts.Sort[0] == '-' {
-		order = "DESC"
-	} else {
-		return nil, fmt.Errorf("invalid sort option %s", opts.Sort)
+	orderBy, order, err := optionsHelper(opts)
+	if err != nil {
+		return nil, err
 	}
-
-	orderBy := opts.Sort[1:]
 	count, err := s.client.
 		Model(&dbModel).
 		Where("name ILIKE ?", "%"+opts.Name+"%").
@@ -55,27 +48,42 @@ func (s *serviceClient) GetService(name string) (*Service, error) {
 }
 
 func (s *serviceClient) CreateService(service Service) error {
-	_, err := s.client.Model(&service).Insert()
+
+	serviceNameExist, err := s.GetService(service.Name)
 	if err != nil {
-		return err
+		if _, errIns := s.client.Model(&service).Insert(); errIns != nil {
+			return errIns
+		}
+	}
+	if serviceNameExist.Name == service.Name && serviceNameExist.Description == service.Description {
+		return fmt.Errorf("service name with %s already exists", service.Name)
 	}
 	return nil
 }
 
 func (s *serviceClient) DeleteService(name string) error {
 	var dbModel Service
-	_, err := s.client.
-		Model(&dbModel).
-		Where("name = ?", name).Delete()
+
+	// clean all rows
+	if name == "*" {
+		_, err := s.client.Model(&dbModel).Where("TRUE").Delete()
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	_, err := s.GetService(name)
 	if err != nil {
 		return err
+	}
+	if _, errDel := s.client.Model(&dbModel).Where("name = ?", name).Delete(); errDel != nil {
+		return errDel
 	}
 	return nil
 }
 
 func (s *serviceClient) GenerateRandomPgData() error {
-	err := populateData(s.client)
-	if err != nil {
+	if err := populateData(s.client); err != nil {
 		return err
 	}
 	return nil

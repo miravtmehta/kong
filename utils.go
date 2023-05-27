@@ -13,7 +13,7 @@ func populateData(db *pg.DB) error {
 		w1 := Service{
 			Versions:    []int{fake.MonthNum(), fake.Day(), fake.WeekdayNum()},
 			Name:        fake.FirstName(),
-			Description: fake.SentencesN(3),
+			Description: fake.SentencesN(2),
 		}
 		_, err := db.Model(&w1).Insert()
 		if err != nil {
@@ -45,7 +45,7 @@ func GetOptions(r *http.Request) QueryOptions {
 	sortBy := query.Get("sort")
 
 	if sortBy == "" {
-		sortBy = "+created_at"
+		sortBy = "created_at"
 	}
 
 	if limit <= 0 || limit >= 50 {
@@ -62,4 +62,16 @@ func GetOptions(r *http.Request) QueryOptions {
 		Sort:   sortBy,
 	}
 
+}
+
+func optionsHelper(opts *QueryOptions) (string, string, error) {
+	order := "ASC"
+	orderBy := opts.Sort[:]
+	if opts.Sort[0] == '-' {
+		order = "DESC"
+		orderBy = opts.Sort[1:]
+	} else {
+		order = "ASC"
+	}
+	return orderBy, order, nil
 }
