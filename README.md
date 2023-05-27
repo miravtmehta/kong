@@ -1,30 +1,30 @@
 # API Object Store - Kong
 
+## Authors
 
-# Documentation 
-
+- [@miravtmehta](https://www.github.com/miravtmehta)
+# Documentation
 ## Project Structure
 
-* `utls.go` - Utilities functions for the applications
+* `db.go` - Initialize DB connections
 * `handlers.go` - Handle HTTP requests and execute model function calls
-* `main.go` - main package to run service
+* `main.go` - main package to initiate routes and logger
 * `model.go` - defines products database model and executes CRUD operations
-* `db.go` - Initialize DB connections and dump dummy data
-* `services.go` - mapper service methods with ServiceProvider Interface against database
+* `services.go` - mapper service methods with ServiceProvider Interface for scoped usage
+* `utils.go` - utility functions for the applications
 
 
 ## Getting Started
 
-This Makefile provides a set of commands to help with the building, running, and cleaning of the endor project. The project includes creating go executables, setting up a Redis container, and running the executables for Mac and Linux. Below are the available commands:
+This Makefile provides a set of commands to help with the building, running, and cleaning of the endor project. The project includes creating go executables, setting up a postgres container, and running the executables for Mac and Linux. Below are the available commands:
 
 ```
 make help        Show help for each of the Makefile recipes.
-make clean       Removes go executables and  redis container
+make clean       Removes go executables and  postgres container
 make build       Runs "clean" and "setup" to build infra and dependencies and create go executables
-make setup       Pull latest Redis images and run as container @ port 6739
+make setup       Pull latest postgres image and run as container @ port 5432
 make run-mac     Run go executable for Mac
 make run-linux   Run go executable for Linux
-make run-tests   Run unit-tests cases
 ```
 
 ## Commands
@@ -39,11 +39,11 @@ The `clean` command removes the go executables and the postgres container.
 
 ### build
 
-The `build` command runs `clean` + `setup`creates the go executables after setting up the postgres contaier.
+The `build` command runs `clean` + `setup`creates the go executables after setting up the postgres container.
 
 ### setup
 
-The `setup` command pulls the latest postres image and runs it as a container at port 5432.
+The `setup` command pulls the latest postgres image and runs it as a container at port 5432.
 
 ### run-mac
 
@@ -69,7 +69,7 @@ Run `build` to install all necessary infrastructure and dependent packages and r
 ```
 
 
-#### Get specific service details 
+#### Get specific service details inclusive versions available
 
 
 ```http
@@ -106,7 +106,7 @@ Run `build` to install all necessary infrastructure and dependent packages and r
 ```
 
 
-## API Operations - filtering, sorting, pagination, versions
+## API Operations - filtering, sorting, pagination
 
 #### Filtering - Get list of service(s) matching **_text_**
 ```http
@@ -136,3 +136,15 @@ Run `build` to install all necessary infrastructure and dependent packages and r
 ```http
   http://localhost:8080/services?limit=4&offset=4
 ```
+
+#### Generate DUMMY PG data and store -- Specifically expose for testing purpose ONLY
+
+```http
+  POST http://localhost:8080/dump
+``` 
+
+#### Clean DUMMY PG data -- Specifically expose for testing purpose ONLY
+
+```http
+  DELETE http://localhost:8080/dump
+``` 
