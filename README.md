@@ -64,7 +64,7 @@ Run `build` to install all necessary infrastructure and dependent packages and r
 
 #### Get all services
 
-```http
+```
   GET http://localhost:8080/services
 ```
 
@@ -72,7 +72,7 @@ Run `build` to install all necessary infrastructure and dependent packages and r
 #### Get specific service details inclusive versions available
 
 
-```http
+```
   GET http://localhost:8080/services/<service-name>
   Example : http://localhost:8080/services/reporting
 ```
@@ -80,7 +80,7 @@ Run `build` to install all necessary infrastructure and dependent packages and r
 #### Create new service
 
 
-```http
+```
   POST http://localhost:8080/services/<service-name>
   
   Example:
@@ -97,10 +97,10 @@ Run `build` to install all necessary infrastructure and dependent packages and r
 }'
 ```
 
-#### Delete specific service 
+#### Delete specific service
 
 
-```http
+```
   DELETE http://localhost:8080/services/<service-name>
   Example : http://localhost:8080/services/security
 ```
@@ -109,22 +109,22 @@ Run `build` to install all necessary infrastructure and dependent packages and r
 ## API Operations - filtering, sorting, pagination
 
 #### Filtering - Get list of service(s) matching **_text_**
-```http
+```
   http://localhost:8080/services?name=<text>
   http://localhost:8080/services?name=monit
 ```
 
 ##### Sorting - Get list of service(s) based on parameter ; By default sorted based on created_at
 
-###### Ascending order 
-```http
+###### Ascending order
+```
   http://localhost:8080/services?sort=created_at // Default
   http://localhost:8080/services?sort=name
   http://localhost:8080/services?sort=id
 ```
 
 ###### Descending order
-```http
+```
   http://localhost:8080/services?sort=-created_at
   http://localhost:8080/services?sort=-name
   http://localhost:8080/services?sort=-id
@@ -133,18 +133,18 @@ Run `build` to install all necessary infrastructure and dependent packages and r
 #### Pagination - Using offset and limit
 
 ###### Default limit = 50
-```http
+```
   http://localhost:8080/services?limit=4&offset=4
 ```
 
 #### Generate DUMMY PG data and store -- Specifically expose for testing purpose ONLY
 
-```http
+```
   POST http://localhost:8080/dump
 ``` 
 
 #### Clean DUMMY PG data -- Specifically expose for testing purpose ONLY
 
-```http
+```
   DELETE http://localhost:8080/dump
 ``` 
