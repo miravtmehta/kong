@@ -8,11 +8,10 @@ import (
 	"os"
 )
 
-var serviceProvider ServiceProvider
-
 type AppRouter struct {
-	Router *mux.Router
-	logger *log.Logger
+	Router          *mux.Router
+	logger          *log.Logger
+	serviceProvider ServiceProvider
 }
 
 func main() {
@@ -22,10 +21,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	serviceProvider = NewServiceClient(conn)
+	sp := NewServiceClient(conn)
 	router := mux.NewRouter()
 	logger := log.New(os.Stdout, "kong-logger", log.Ldate|log.Ltime|log.Lshortfile)
-	r := AppRouter{Router: router, logger: logger}
+	r := AppRouter{Router: router, logger: logger, serviceProvider: sp}
 	r.InitializeRoutes()
 
 }

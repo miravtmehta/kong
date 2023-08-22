@@ -22,7 +22,7 @@ func (a *AppRouter) respondWithError(w http.ResponseWriter, code int, message st
 
 func (a *AppRouter) getAllServices(w http.ResponseWriter, r *http.Request) {
 	opts := GetOptions(r)
-	data, err := serviceProvider.GetAllService(&opts)
+	data, err := a.serviceProvider.GetAllService(&opts)
 	if err != nil {
 		switch err {
 		case pg.ErrNoRows:
@@ -38,7 +38,7 @@ func (a *AppRouter) getAllServices(w http.ResponseWriter, r *http.Request) {
 
 func (a *AppRouter) getService(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	data, err := serviceProvider.GetService(vars["name"])
+	data, err := a.serviceProvider.GetService(vars["name"])
 	if err != nil {
 		switch err {
 		case pg.ErrNoRows:
@@ -62,7 +62,7 @@ func (a *AppRouter) createService(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	if err := serviceProvider.CreateService(service); err != nil {
+	if err := a.serviceProvider.CreateService(service); err != nil {
 		a.respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -72,7 +72,7 @@ func (a *AppRouter) createService(w http.ResponseWriter, r *http.Request) {
 
 func (a *AppRouter) deleteService(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	err := serviceProvider.DeleteService(vars["name"])
+	err := a.serviceProvider.DeleteService(vars["name"])
 	if err != nil {
 		switch err {
 		case pg.ErrNoRows:
@@ -87,7 +87,7 @@ func (a *AppRouter) deleteService(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *AppRouter) dump(w http.ResponseWriter, r *http.Request) {
-	err := serviceProvider.GenerateRandomPgData()
+	err := a.serviceProvider.GenerateRandomPgData()
 	if err != nil {
 		a.respondWithError(w, http.StatusInternalServerError, err.Error())
 	}
@@ -95,7 +95,7 @@ func (a *AppRouter) dump(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *AppRouter) cleanDump(w http.ResponseWriter, r *http.Request) {
-	err := serviceProvider.DeleteService("*")
+	err := a.serviceProvider.DeleteService("*")
 
 	if err != nil {
 		a.respondWithError(w, http.StatusInternalServerError, err.Error())
