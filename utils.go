@@ -36,6 +36,8 @@ type QueryOptions struct {
 	Sort   string `json:"sort"`
 }
 
+// GetOptions extracts and validates query parameters from an HTTP request, returning
+// a QueryOptions struct with sanitized limit, offset, name, and sort values.
 func GetOptions(r *http.Request) QueryOptions {
 
 	query := r.URL.Query()
