@@ -14,6 +14,8 @@ func (a *AppRouter) respondWithJSON(w http.ResponseWriter, code int, payload int
 	w.Write(response)
 }
 
+// respondWithError writes a sanitized error response to the client using HTTP status text
+// while logging the underlying error details for internal debugging purposes.
 func (a *AppRouter) respondWithError(w http.ResponseWriter, code int, err error) {
 	a.respondWithJSON(w, code, map[string]string{"error": http.StatusText(code)})
 	a.logger.Printf("App error: code %d, message %v", code, err)
