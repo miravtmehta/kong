@@ -17,7 +17,7 @@ func (a *AppRouter) respondWithJSON(w http.ResponseWriter, code int, payload int
 
 func (a *AppRouter) respondWithError(w http.ResponseWriter, code int, message string) {
 	a.respondWithJSON(w, code, map[string]string{"error": message})
-	a.logger.Printf("App error: code %d, message %s", code, message)
+	a.logger.Printf("App error: code %d, message %q", code, message)
 }
 
 func (a *AppRouter) getAllServices(w http.ResponseWriter, r *http.Request) {
