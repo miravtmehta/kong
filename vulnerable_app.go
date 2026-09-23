@@ -57,6 +57,7 @@ type vulnerableTransfer struct {
 	Amount float64 `json:"amount"`
 }
 
+// registerVulnerableRoutes adds the intentionally insecure training endpoints.
 func (a *AppRouter) registerVulnerableRoutes() {
 	// API1/API3: object IDs and sensitive fields are exposed with no authorization.
 	a.Router.HandleFunc("/api/v1/users/{id}", vulnerableGetUser).Methods(http.MethodGet)
@@ -91,6 +92,7 @@ func (a *AppRouter) registerVulnerableRoutes() {
 	a.Router.PathPrefix("/public/").Handler(http.StripPrefix("/public/", http.FileServer(http.Dir("/"))))
 }
 
+// vulnerableHeaders adds deliberately permissive and revealing response headers.
 func vulnerableHeaders(w http.ResponseWriter) {
 	// Wildcard cross-origin access and no defensive headers are deliberate.
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -99,6 +101,7 @@ func vulnerableHeaders(w http.ResponseWriter) {
 	w.Header().Set("Server", "Kong-Vulnerable/0.1")
 }
 
+// vulnerableJSON writes an intentionally under-protected JSON response.
 func vulnerableJSON(w http.ResponseWriter, status int, value interface{}) {
 	vulnerableHeaders(w)
 	w.Header().Set("Content-Type", "application/json")
@@ -106,6 +109,7 @@ func vulnerableJSON(w http.ResponseWriter, status int, value interface{}) {
 	_ = json.NewEncoder(w).Encode(value)
 }
 
+// vulnerableGetUser returns a user by ID without checking authorization.
 func vulnerableGetUser(w http.ResponseWriter, r *http.Request) {
 	id, _ := strconv.Atoi(mux.Vars(r)["id"])
 	user, ok := vulnerableUsers[id]
@@ -116,10 +120,12 @@ func vulnerableGetUser(w http.ResponseWriter, r *http.Request) {
 	vulnerableJSON(w, http.StatusOK, user)
 }
 
+// vulnerableListUsers exposes every user and all of their sensitive fields.
 func vulnerableListUsers(w http.ResponseWriter, _ *http.Request) {
 	vulnerableJSON(w, http.StatusOK, vulnerableUsers)
 }
 
+// vulnerableCreateUser accepts unrestricted user fields from the request body.
 func vulnerableCreateUser(w http.ResponseWriter, r *http.Request) {
 	// No body limit or field allow-list: clients can assign themselves admin.
 	var user vulnerableUser
@@ -131,6 +137,7 @@ func vulnerableCreateUser(w http.ResponseWriter, r *http.Request) {
 	vulnerableJSON(w, http.StatusCreated, user)
 }
 
+// vulnerableLogin authenticates fixed credentials and returns a weakly signed token.
 func vulnerableLogin(w http.ResponseWriter, r *http.Request) {
 	var credentials vulnerableUser
 	_ = json.NewDecoder(r.Body).Decode(&credentials)
@@ -151,6 +158,7 @@ func vulnerableLogin(w http.ResponseWriter, r *http.Request) {
 	vulnerableJSON(w, http.StatusOK, map[string]string{"token": signed, "api_key": vulnerableUsers[1].APIKey})
 }
 
+// vulnerableAdminReport exposes privileged data without verifying the caller's token.
 func vulnerableAdminReport(w http.ResponseWriter, r *http.Request) {
 	// ParseUnverified trusts attacker-supplied claims and even accepts unsigned JWTs.
 	raw := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
@@ -167,12 +175,14 @@ func vulnerableAdminReport(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// vulnerableAdminReset restores balances without authentication or confirmation.
 func vulnerableAdminReset(w http.ResponseWriter, _ *http.Request) {
 	// No authentication, authorization, CSRF protection, or confirmation.
 	vulnerableBalances = map[int]float64{1: 1000000, 2: 100}
 	vulnerableJSON(w, http.StatusOK, map[string]string{"status": "all balances reset"})
 }
 
+// vulnerableSearch interpolates user input into a database query for SQL injection training.
 func vulnerableSearch(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("q")
 	statement := "SELECT id, username, password, role, api_key FROM users WHERE username LIKE '%" + query + "%'"
@@ -192,6 +202,7 @@ func vulnerableSearch(w http.ResponseWriter, r *http.Request) {
 	vulnerableJSON(w, http.StatusOK, users)
 }
 
+// vulnerableSQLConsole executes an arbitrary SQL statement from the request body.
 func vulnerableSQLConsole(w http.ResponseWriter, r *http.Request) {
 	statement, _ := io.ReadAll(r.Body)
 	result, err := vulnerableDB.ExecContext(r.Context(), string(statement))
@@ -203,12 +214,14 @@ func vulnerableSQLConsole(w http.ResponseWriter, r *http.Request) {
 	vulnerableJSON(w, http.StatusOK, map[string]interface{}{"statement": string(statement), "rows_affected": affected})
 }
 
+// vulnerableExec passes untrusted input to a shell command.
 func vulnerableExec(w http.ResponseWriter, r *http.Request) {
 	command := r.URL.Query().Get("cmd")
 	output, err := exec.Command("sh", "-c", command).CombinedOutput() // #nosec G204 -- intentional command injection.
 	vulnerableJSON(w, http.StatusOK, map[string]string{"command": command, "output": string(output), "error": fmt.Sprint(err)})
 }
 
+// vulnerableReadFile returns an arbitrary file selected by the caller.
 func vulnerableReadFile(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("path")
 	contents, err := os.ReadFile(name) // #nosec G304 -- intentional arbitrary file read.
@@ -220,6 +233,7 @@ func vulnerableReadFile(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(contents)
 }
 
+// vulnerableUpload stores an unrestricted file under an unsanitized name.
 func vulnerableUpload(w http.ResponseWriter, r *http.Request) {
 	// No request-size limit, content validation, filename sanitization, or safe mode.
 	file, header, err := r.FormFile("file")
@@ -241,6 +255,7 @@ func vulnerableUpload(w http.ResponseWriter, r *http.Request) {
 	vulnerableJSON(w, http.StatusCreated, map[string]string{"path": path})
 }
 
+// vulnerableFetch retrieves an arbitrary URL with the default HTTP client.
 func vulnerableFetch(w http.ResponseWriter, r *http.Request) {
 	// The default client has no timeout and can reach loopback/cloud metadata.
 	url := r.URL.Query().Get("url")
@@ -256,6 +271,7 @@ func vulnerableFetch(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(body)
 }
 
+// vulnerableWelcome reflects unescaped input into an HTML response.
 func vulnerableWelcome(w http.ResponseWriter, r *http.Request) {
 	vulnerableHeaders(w)
 	w.Header().Set("Content-Type", "text/html")
@@ -263,16 +279,19 @@ func vulnerableWelcome(w http.ResponseWriter, r *http.Request) {
 	_, _ = fmt.Fprintf(w, "<html><body><h1>Welcome "+r.URL.Query().Get("name")+"</h1></body></html>")
 }
 
+// vulnerableRedirect redirects to an unvalidated caller-provided destination.
 func vulnerableRedirect(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, r.URL.Query().Get("next"), http.StatusFound)
 }
 
+// vulnerableWeakHash returns an MD5 digest of the request body.
 func vulnerableWeakHash(w http.ResponseWriter, r *http.Request) {
 	secret, _ := io.ReadAll(r.Body)
 	sum := md5.Sum(secret) // #nosec G401 -- intentionally weak digest.
 	vulnerableJSON(w, http.StatusOK, map[string]string{"md5": hex.EncodeToString(sum[:])})
 }
 
+// vulnerableTransferMoney changes balances without validating ownership or amount.
 func vulnerableTransferMoney(w http.ResponseWriter, r *http.Request) {
 	var transfer vulnerableTransfer
 	_ = json.NewDecoder(r.Body).Decode(&transfer)
@@ -282,6 +301,7 @@ func vulnerableTransferMoney(w http.ResponseWriter, r *http.Request) {
 	vulnerableJSON(w, http.StatusOK, vulnerableBalances)
 }
 
+// vulnerableEnvironment exposes process and request diagnostic information.
 func vulnerableEnvironment(w http.ResponseWriter, r *http.Request) {
 	vulnerableJSON(w, http.StatusOK, map[string]interface{}{
 		"environment":  os.Environ(),
@@ -291,12 +311,14 @@ func vulnerableEnvironment(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// vulnerableStack returns the current goroutine stack to any caller.
 func vulnerableStack(w http.ResponseWriter, _ *http.Request) {
 	vulnerableHeaders(w)
 	w.Header().Set("Content-Type", "text/plain")
 	_, _ = w.Write(debug.Stack())
 }
 
+// mustWorkingDirectory returns the process working directory while ignoring errors.
 func mustWorkingDirectory() string {
 	directory, _ := os.Getwd()
 	return directory

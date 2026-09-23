@@ -29,6 +29,7 @@ func main() {
 
 }
 
+// InitializeRoutes registers the application's HTTP routes and starts the server.
 func (a *AppRouter) InitializeRoutes() {
 	a.Router.HandleFunc("/services", a.getAllServices).Methods(http.MethodGet)
 	a.Router.HandleFunc("/services/{name}", a.getService).Methods(http.MethodGet)
