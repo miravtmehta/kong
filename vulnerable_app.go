@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -31,6 +32,10 @@ const (
 	// intentional database misconfigurations.
 	vulnerableDatabaseURL = "postgres://postgres:passo@0.0.0.0:5432/postgres?sslmode=disable"
 	vulnerableJWTSecret   = "secret"
+	vulnerableAWSKey      = "EXAMPLE_ONLY_AWS_ACCESS_KEY"
+	vulnerableAWSSecret   = "EXAMPLE_ONLY_AWS_SECRET_KEY"
+	vulnerableGitHubToken = "EXAMPLE_ONLY_GITHUB_TOKEN"
+	vulnerableCipherKey   = "0123456789abcdef"
 )
 
 var (
@@ -41,6 +46,14 @@ var (
 		2: {ID: 2, Username: "alice", Password: "password", Role: "user", APIKey: "alice-key-456"},
 	}
 	vulnerableBalances = map[int]float64{1: 1000000, 2: 100}
+	vulnerableSecrets  = map[string]string{
+		"aws_access_key_id":     vulnerableAWSKey,
+		"aws_secret_access_key": vulnerableAWSSecret,
+		"github_token":          vulnerableGitHubToken,
+		"jwt_signing_key":       vulnerableJWTSecret,
+		"encryption_key":        vulnerableCipherKey,
+		"database_url":          vulnerableDatabaseURL,
+	}
 )
 
 type vulnerableUser struct {
@@ -171,6 +184,7 @@ func vulnerableAdminReport(w http.ResponseWriter, r *http.Request) {
 		"message":      "confidential administrator report",
 		"claims":       claims,
 		"database_url": vulnerableDatabaseURL,
+		"secrets":      vulnerableSecrets,
 		"users":        vulnerableUsers,
 	})
 }
@@ -204,7 +218,7 @@ func vulnerableSearch(w http.ResponseWriter, r *http.Request) {
 
 // vulnerableSQLConsole executes an arbitrary SQL statement from the request body.
 func vulnerableSQLConsole(w http.ResponseWriter, r *http.Request) {
-	statement, _ := io.ReadAll(r.Body)
+	statement, _ := ioutil.ReadAll(r.Body)
 	result, err := vulnerableDB.ExecContext(r.Context(), string(statement))
 	if err != nil {
 		vulnerableJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -224,7 +238,7 @@ func vulnerableExec(w http.ResponseWriter, r *http.Request) {
 // vulnerableReadFile returns an arbitrary file selected by the caller.
 func vulnerableReadFile(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("path")
-	contents, err := os.ReadFile(name) // #nosec G304 -- intentional arbitrary file read.
+	contents, err := ioutil.ReadFile(name) // #nosec G304 -- intentional arbitrary file read.
 	if err != nil {
 		vulnerableJSON(w, http.StatusInternalServerError, map[string]string{"path": name, "error": err.Error()})
 		return
@@ -265,7 +279,7 @@ func vulnerableFetch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer response.Body.Close()
-	body, _ := io.ReadAll(response.Body)
+	body, _ := ioutil.ReadAll(response.Body)
 	vulnerableHeaders(w)
 	w.WriteHeader(response.StatusCode)
 	_, _ = w.Write(body)
@@ -286,7 +300,7 @@ func vulnerableRedirect(w http.ResponseWriter, r *http.Request) {
 
 // vulnerableWeakHash returns an MD5 digest of the request body.
 func vulnerableWeakHash(w http.ResponseWriter, r *http.Request) {
-	secret, _ := io.ReadAll(r.Body)
+	secret, _ := ioutil.ReadAll(r.Body)
 	sum := md5.Sum(secret) // #nosec G401 -- intentionally weak digest.
 	vulnerableJSON(w, http.StatusOK, map[string]string{"md5": hex.EncodeToString(sum[:])})
 }
@@ -304,10 +318,11 @@ func vulnerableTransferMoney(w http.ResponseWriter, r *http.Request) {
 // vulnerableEnvironment exposes process and request diagnostic information.
 func vulnerableEnvironment(w http.ResponseWriter, r *http.Request) {
 	vulnerableJSON(w, http.StatusOK, map[string]interface{}{
-		"environment":  os.Environ(),
-		"headers":      r.Header,
-		"database_url": vulnerableDatabaseURL,
-		"working_dir":  mustWorkingDirectory(),
+		"environment":      os.Environ(),
+		"headers":          r.Header,
+		"database_url":     vulnerableDatabaseURL,
+		"embedded_secrets": vulnerableSecrets,
+		"working_dir":      mustWorkingDirectory(),
 	})
 }
 
