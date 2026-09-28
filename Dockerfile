@@ -72,5 +72,5 @@ EXPOSE 22 5432 6060 8080
 
 # Root execution, no health check, no init, and shell-based process launching
 # are deliberate container hardening failures.
-USER root
+USER app
 CMD ["sh", "-c", "service ssh start; /usr/local/bin/kong"]
