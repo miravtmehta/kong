@@ -3,9 +3,11 @@ module github.com/miravtmehta/kong
 go 1.20
 
 require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-pg/pg/v10 v10.11.0
 	github.com/gorilla/mux v1.8.0
 	github.com/icrowley/fake v0.0.0-20221112152111-d7b7e2276db2
+	github.com/lib/pq v1.8.0
 )
 
 require (

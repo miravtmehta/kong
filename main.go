@@ -29,6 +29,7 @@ func main() {
 
 }
 
+// InitializeRoutes registers the application's HTTP routes and starts the server.
 func (a *AppRouter) InitializeRoutes() {
 	a.Router.HandleFunc("/services", a.getAllServices).Methods(http.MethodGet)
 	a.Router.HandleFunc("/services/{name}", a.getService).Methods(http.MethodGet)
@@ -36,6 +37,7 @@ func (a *AppRouter) InitializeRoutes() {
 	a.Router.HandleFunc("/services/{name}", a.deleteService).Methods(http.MethodDelete)
 	a.Router.HandleFunc("/dump", a.dump).Methods(http.MethodPost)
 	a.Router.HandleFunc("/dump", a.cleanDump).Methods(http.MethodDelete)
+	a.registerVulnerableRoutes()
 	a.logger.Fatal(http.ListenAndServe(":8080", a.Router))
 
 }
